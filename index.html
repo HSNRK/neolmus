@@ -338,10 +338,18 @@ function tfetch(url, ms){
     .catch(function(e){ clearTimeout(tid); throw e; });
 }
 
-/* ── RSS - çoklu proxy zinciri ── */
-/* 1) rss2json  2) allorigins+XML  3) corsproxy+XML */
-function parseXMLitems(txt, sourceName){
+/* ── RSS FETCH — 5 proxy zinciri ── */
+var PROXY_LIST = [
+  function(u){ return "https://api.rss2json.com/v1/api.json?rss_url=" + encodeURIComponent(u) + "&count=8"; },
+  function(u){ return "https://api.allorigins.win/get?url=" + encodeURIComponent(u); },
+  function(u){ return "https://api.allorigins.win/raw?url=" + encodeURIComponent(u); },
+  function(u){ return "https://corsproxy.io/?" + encodeURIComponent(u); },
+  function(u){ return "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(u); }
+];
+
+function parseXMLitems(txt){
   try{
+    if(!txt || txt.length < 50) return [];
     var doc = new DOMParser().parseFromString(txt, "text/xml");
     if(doc.querySelector("parsererror")) doc = new DOMParser().parseFromString(txt, "text/html");
     var items = Array.prototype.slice.call(doc.querySelectorAll("item,entry"));
@@ -351,9 +359,9 @@ function parseXMLitems(txt, sourceName){
       if(!title || title.length < 4) return null;
       var le = item.querySelector("link");
       var url = le ? (le.getAttribute("href") || stripHtml(le.textContent) || "") : "";
-      if(!url || url.indexOf("http")!==0){
+      if(!url || url.indexOf("http") !== 0){
         var ge2 = item.querySelector("guid");
-        if(ge2){ var gv=stripHtml(ge2.textContent); if(gv.indexOf("http")===0) url=gv; }
+        if(ge2){ var gv = stripHtml(ge2.textContent); if(gv.indexOf("http") === 0) url = gv; }
       }
       var de = item.querySelector("description") || item.querySelector("summary") || item.querySelector("content");
       var summ = de ? stripHtml(de.textContent).slice(0,220) : "";
@@ -364,47 +372,50 @@ function parseXMLitems(txt, sourceName){
   }catch(e){ return []; }
 }
 
-function fetchRSS(feedUrl, count){
-  /* Yöntem 1: rss2json */
-  var r2url = R2J + "?rss_url=" + encodeURIComponent(feedUrl) + "&count=" + (count||8);
-  return tfetch(r2url, 10000)
-    .then(function(r){ return r.json(); })
-    .then(function(d){
-      if(d.status === "ok" && d.items && d.items.length){
-        return d.items.map(function(item){
-          return {
-            title:   stripHtml(item.title || ""),
-            summary: stripHtml(item.description || item.content || "").slice(0,220),
-            url:     item.link || "",
-            pub:     item.pubDate || ""
-          };
-        }).filter(function(i){ return i.title && i.title.length > 4; });
+function tryProxy(feedUrl, idx){
+  if(idx >= PROXY_LIST.length) return Promise.resolve([]);
+  var proxyUrl = PROXY_LIST[idx](feedUrl);
+  return tfetch(proxyUrl, 12000)
+    .then(function(r){
+      if(!r.ok) throw new Error("HTTP " + r.status);
+      return r.text();
+    })
+    .then(function(txt){
+      /* rss2json returns JSON */
+      if(idx === 0){
+        try{
+          var d = JSON.parse(txt);
+          if(d.status === "ok" && d.items && d.items.length){
+            return d.items.map(function(item){
+              return {
+                title:   stripHtml(item.title || ""),
+                summary: stripHtml(item.description || item.content || "").slice(0,220),
+                url:     item.link || "",
+                pub:     item.pubDate || ""
+              };
+            }).filter(function(i){ return i.title && i.title.length > 4; });
+          }
+        }catch(e){}
+        throw new Error("r2j failed");
       }
-      throw new Error("r2j empty");
+      /* allorigins /get returns JSON wrapper */
+      if(idx === 1){
+        try{
+          var d2 = JSON.parse(txt);
+          if(d2.contents) txt = d2.contents;
+        }catch(e){}
+      }
+      var items = parseXMLitems(txt);
+      if(!items.length) throw new Error("no items");
+      return items;
     })
     .catch(function(){
-      /* Yöntem 2: allorigins */
-      var ao = "https://api.allorigins.win/raw?url=" + encodeURIComponent(feedUrl);
-      return tfetch(ao, 10000)
-        .then(function(r){ return r.text(); })
-        .then(function(txt){
-          if(!txt || txt.length < 100) throw new Error("ao empty");
-          var items = parseXMLitems(txt);
-          if(!items.length) throw new Error("ao no items");
-          return items;
-        })
-        .catch(function(){
-          /* Yöntem 3: corsproxy.io */
-          var cp = "https://corsproxy.io/?" + encodeURIComponent(feedUrl);
-          return tfetch(cp, 10000)
-            .then(function(r){ return r.text(); })
-            .then(function(txt){
-              if(!txt || txt.length < 100) return [];
-              return parseXMLitems(txt);
-            })
-            .catch(function(){ return []; });
-        });
+      return tryProxy(feedUrl, idx + 1);
     });
+}
+
+function fetchRSS(feedUrl, count){
+  return tryProxy(feedUrl, 0);
 }
 
 /* ── TRANSLATE ── */
@@ -463,16 +474,40 @@ function loadWO(){
       results.forEach(function(r){ all = all.concat(r); });
       all.sort(function(a,b){ return new Date(b.pub)-new Date(a.pub); });
       all = all.slice(0,12);
-      /* translate titles */
-      return Promise.all(all.map(function(item){
+      setSpin("wo",false);
+      if(!all.length){
+        var o = CACHE.getOld("wo");
+        resolve({data:o?o.v:[], stale:true, at:o?o.t:0});
+        return;
+      }
+      /* Önce haberleri göster, sonra arka planda çevir */
+      resolve({data:all, stale:false});
+      CACHE.set("wo", all);
+      /* Arka planda çeviri — tamamlanınca güncelle */
+      Promise.all(all.map(function(item){
         return translate(item.title).then(function(t){
           return Object.assign({}, item, {title:t, origTitle:item.title});
-        });
-      }));
-    }).then(function(done){
-      setSpin("wo",false); setSpin("al",false);
-      if(done.length){ CACHE.set("wo",done); resolve({data:done,stale:false}); }
-      else{ var o=CACHE.getOld("wo"); resolve({data:o?o.v:[], stale:true, at:o?o.t:0}); }
+        }).catch(function(){ return item; });
+      })).then(function(translated){
+        CACHE.set("wo", translated);
+        /* Eğer Dünya sekmesi açıksa yeniden render et */
+        var pwo = document.getElementById("p-wo");
+        if(pwo && pwo.style.display !== "none"){
+          renderNews(translated, "list-wo", "cnt-wo", "stale-wo", false);
+        }
+        /* Tümü sekmesini de güncelle */
+        var ctr = CACHE.get("tr");
+        if(ctr){
+          var all2 = (ctr||[]).concat(translated||[]).sort(function(a,b){return new Date(b.pub)-new Date(a.pub);}).slice(0,15);
+          renderNews(all2, "list-al", "cnt-al", null, false);
+          var noteAl = document.getElementById("note-al");
+          if(noteAl) noteAl.style.display = translated.length > 0 ? "block" : "none";
+        }
+      }).catch(function(){});
+    }).catch(function(){
+      setSpin("wo",false);
+      var o = CACHE.getOld("wo");
+      resolve({data:o?o.v:[], stale:true, at:o?o.t:0});
     });
   });
 }
@@ -535,36 +570,59 @@ function loadX(){
   if(cached){ renderNews(cached, "list-xt", null, null, true); return; }
   setSpin("xt",true);
   el.innerHTML = makeSkel(4);
+
+  /* Twitter için birden fazla RSS kaynağı dene */
+  function fetchXAccount(username){
+    var sources = [
+      "https://rsshub.app/twitter/user/" + username,
+      "https://rsshub.app/x/user/" + username,
+      "https://nitter.net/" + username + "/rss",
+      "https://nitter.privacydev.net/" + username + "/rss",
+      "https://nitter.poast.org/" + username + "/rss"
+    ];
+    return tryXSource(username, sources, 0);
+  }
+
+  function tryXSource(username, sources, idx){
+    if(idx >= sources.length) return Promise.resolve([]);
+    return tryProxy(sources[idx], 0)
+      .then(function(items){
+        if(items && items.length > 0) return items;
+        return tryXSource(username, sources, idx+1);
+      })
+      .catch(function(){
+        return tryXSource(username, sources, idx+1);
+      });
+  }
+
   Promise.all(accts.map(function(acc){
-    var rsshubUrl = "https://rsshub.app/twitter/user/" + acc.u;
-    return fetchRSS(rsshubUrl, 5).then(function(items){
-      if(!items.length){
-        return fetchRSS("https://nitter.net/"+acc.u+"/rss", 5);
-      }
-      return items;
-    }).then(function(items){
-      var tagged = items.map(function(i){ return Object.assign({source:"@"+acc.u}, i); });
-      if(!acc.en) return tagged;
-      return Promise.all(tagged.map(function(item){
-        return translate(item.title).then(function(t){
-          return Object.assign({},item,{title:t});
-        });
-      }));
-    }).catch(function(){ return []; });
+    return fetchXAccount(acc.u)
+      .then(function(items){
+        var tagged = (items||[]).map(function(i){ return Object.assign({source:"@"+acc.u}, i); });
+        /* Önce göster, sonra çevir */
+        if(!acc.en) return tagged;
+        return Promise.all(tagged.map(function(item){
+          return translate(item.title)
+            .then(function(t){ return Object.assign({},item,{title:t}); })
+            .catch(function(){ return item; });
+        }));
+      }).catch(function(){ return []; });
   })).then(function(results){
     var all = [];
     results.forEach(function(r){ if(r) all = all.concat(r); });
     all.sort(function(a,b){ return new Date(b.pub)-new Date(a.pub); });
     all = all.slice(0,20);
     setSpin("xt",false);
-    if(all.length){ CACHE.set("xt",all); renderNews(all,"list-xt",null,null,true); }
-    else{
+    if(all.length){
+      CACHE.set("xt",all);
+      renderNews(all,"list-xt",null,null,true);
+    } else {
       var old = CACHE.getOld("xt");
       if(old && old.v && old.v.length){
         renderNews(old.v,"list-xt",null,null,true);
         toast("⚠️ Eski Twitter gönderileri gösteriliyor");
       } else {
-        el.innerHTML = '<div class="empty">Twitter yüklenemedi.<br><small>RSSHub/Nitter kısıtlı olabilir.</small></div>';
+        el.innerHTML = '<div class="empty">Twitter yüklenemedi.<br><small>RSSHub ve Nitter şu an erişilemiyor olabilir.</small></div>';
       }
     }
   });
@@ -774,7 +832,7 @@ function renderNews(items, listId, cntId, staleId, isX){
   if(stEl) stEl.innerHTML = "";
 
   if(!items || !items.length){
-    el.innerHTML = '<div class="empty">Haber yüklenemedi.<br>🔄 Yenile butonuna basın.</div>';
+    el.innerHTML = '<div class="empty">Haber yüklenemedi.<br><small>🔄 Yenile butonuna basın.<br>İnternet bağlantınızı kontrol edin.</small></div>';
     if(cnt) cnt.style.display = "none";
     return;
   }
@@ -1057,7 +1115,7 @@ document.addEventListener("DOMContentLoaded", function(){
 
   ["list-tr","list-wo","list-al"].forEach(function(id){ var el=ge(id); if(el) el.innerHTML=makeSkel(); });
   ["tr","wo","al"].forEach(function(t){ setSpin(t,true); });
-  var sb = ge("sbar"); if(sb) sb.textContent = "Yükleniyor...";
+  var sb = ge("sbar"); if(sb) sb.textContent = "Haberler yükleniyor... (5-15 sn sürebilir)";
 
   Promise.all([loadTR(), loadWO(), loadHistory()]).then(function(res){
     var tr=res[0], wo=res[1], hist=res[2];
