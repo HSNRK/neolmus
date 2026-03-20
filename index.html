@@ -338,23 +338,73 @@ function tfetch(url, ms){
     .catch(function(e){ clearTimeout(tid); throw e; });
 }
 
-/* ── RSS via rss2json.com ── */
+/* ── RSS - çoklu proxy zinciri ── */
+/* 1) rss2json  2) allorigins+XML  3) corsproxy+XML */
+function parseXMLitems(txt, sourceName){
+  try{
+    var doc = new DOMParser().parseFromString(txt, "text/xml");
+    if(doc.querySelector("parsererror")) doc = new DOMParser().parseFromString(txt, "text/html");
+    var items = Array.prototype.slice.call(doc.querySelectorAll("item,entry"));
+    return items.slice(0,8).map(function(item){
+      var te = item.querySelector("title");
+      var title = stripHtml(te ? te.textContent : "");
+      if(!title || title.length < 4) return null;
+      var le = item.querySelector("link");
+      var url = le ? (le.getAttribute("href") || stripHtml(le.textContent) || "") : "";
+      if(!url || url.indexOf("http")!==0){
+        var ge2 = item.querySelector("guid");
+        if(ge2){ var gv=stripHtml(ge2.textContent); if(gv.indexOf("http")===0) url=gv; }
+      }
+      var de = item.querySelector("description") || item.querySelector("summary") || item.querySelector("content");
+      var summ = de ? stripHtml(de.textContent).slice(0,220) : "";
+      var dte = item.querySelector("pubDate") || item.querySelector("published") || item.querySelector("updated");
+      var pub = dte ? new Date(stripHtml(dte.textContent)).toISOString() : new Date().toISOString();
+      return {title:title, summary:summ, url:url, pub:pub};
+    }).filter(Boolean);
+  }catch(e){ return []; }
+}
+
 function fetchRSS(feedUrl, count){
-  var url = R2J + "?rss_url=" + encodeURIComponent(feedUrl) + "&count=" + (count||8) + "&api_key=";
-  return tfetch(url, 12000)
+  /* Yöntem 1: rss2json */
+  var r2url = R2J + "?rss_url=" + encodeURIComponent(feedUrl) + "&count=" + (count||8);
+  return tfetch(r2url, 10000)
     .then(function(r){ return r.json(); })
     .then(function(d){
-      if(d.status !== "ok") return [];
-      return (d.items || []).map(function(item){
-        return {
-          title:   stripHtml(item.title || ""),
-          summary: stripHtml(item.description || item.content || "").slice(0,220),
-          url:     item.link || "",
-          pub:     item.pubDate || ""
-        };
-      }).filter(function(i){ return i.title && i.title.length > 4; });
+      if(d.status === "ok" && d.items && d.items.length){
+        return d.items.map(function(item){
+          return {
+            title:   stripHtml(item.title || ""),
+            summary: stripHtml(item.description || item.content || "").slice(0,220),
+            url:     item.link || "",
+            pub:     item.pubDate || ""
+          };
+        }).filter(function(i){ return i.title && i.title.length > 4; });
+      }
+      throw new Error("r2j empty");
     })
-    .catch(function(){ return []; });
+    .catch(function(){
+      /* Yöntem 2: allorigins */
+      var ao = "https://api.allorigins.win/raw?url=" + encodeURIComponent(feedUrl);
+      return tfetch(ao, 10000)
+        .then(function(r){ return r.text(); })
+        .then(function(txt){
+          if(!txt || txt.length < 100) throw new Error("ao empty");
+          var items = parseXMLitems(txt);
+          if(!items.length) throw new Error("ao no items");
+          return items;
+        })
+        .catch(function(){
+          /* Yöntem 3: corsproxy.io */
+          var cp = "https://corsproxy.io/?" + encodeURIComponent(feedUrl);
+          return tfetch(cp, 10000)
+            .then(function(r){ return r.text(); })
+            .then(function(txt){
+              if(!txt || txt.length < 100) return [];
+              return parseXMLitems(txt);
+            })
+            .catch(function(){ return []; });
+        });
+    });
 }
 
 /* ── TRANSLATE ── */
