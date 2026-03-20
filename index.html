@@ -894,31 +894,61 @@ function renderFolk(){
 }
 
 /* ── NOTIFICATIONS ── */
-var notifActive = false;
-function toggleNotif(){
-  notifActive = !notifActive;
+var notifActive = localStorage.getItem("neo_notif") === "1";
+
+function updateNotifUI(){
   var btn = ge("btn-notif"), lbl = ge("notif-lbl");
+  if(!btn || !lbl) return;
   if(notifActive){
     btn.classList.add("on"); lbl.textContent = "Aktif ✓";
-    toast("🔔 Bildirimler açık! Saat başı ve son dakika haberleri için bildirim alacaksınız.");
-    try{
-      if(typeof Notification!=="undefined" && Notification.permission==="default"){
-        var p = Notification.requestPermission();
-        if(p && typeof p.then==="function") p.then(function(){}).catch(function(){});
-      }
-    }catch(x){}
   } else {
     btn.classList.remove("on"); lbl.textContent = "Bildirimler";
+  }
+}
+
+function toggleNotif(){
+  notifActive = !notifActive;
+  localStorage.setItem("neo_notif", notifActive ? "1" : "0");
+  updateNotifUI();
+  if(notifActive){
+    /* iOS Safari: Sadece ana ekrandan PWA olarak açıldığında native bildirim çalışır */
+    var isiOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    var isStandalone = window.navigator.standalone === true;
+    if(typeof Notification !== "undefined"){
+      if(Notification.permission === "default"){
+        var p = Notification.requestPermission();
+        if(p && typeof p.then === "function"){
+          p.then(function(perm){
+            if(perm === "granted"){
+              toast("🔔 Bildirimler açık! Sistem bildirimleri aktif.");
+            } else {
+              toast("🔔 Uygulama bildirimleri açık. Sistem bildirimi için izin gerekli.");
+            }
+          }).catch(function(){});
+        }
+      } else if(Notification.permission === "granted"){
+        toast("🔔 Bildirimler açık! Saat başı bildirim alacaksınız.");
+      } else {
+        toast("🔔 Uygulama bildirimleri açık. Sistem bildirimi için ayarlardan izin verin.");
+      }
+    } else if(isiOS && !isStandalone){
+      toast("🔔 Açık! Sistem bildirimi için 'Ana Ekrana Ekle' yapın.");
+    } else {
+      toast("🔔 Bildirimler açık!");
+    }
+  } else {
     toast("🔕 Bildirimler kapatıldı.");
   }
 }
 
 function sendNotif(title, body){
   if(!notifActive) return;
+  /* Her zaman uygulama içi toast göster */
   toast("🔔 " + title);
+  /* Sistem bildirimi - desteklenen platformlarda */
   try{
-    if(typeof Notification!=="undefined" && Notification.permission==="granted"){
-      new Notification(title, {body: body||""});
+    if(typeof Notification !== "undefined" && Notification.permission === "granted"){
+      new Notification(title, {body: body || "", icon: "data:image/png;base64,iVBORw0KGgo="});
     }
   }catch(x){}
 }
@@ -1031,6 +1061,7 @@ document.addEventListener("DOMContentLoaded", function(){
   if(accF) accF.addEventListener("click", function(){ toggleAcc("body-folk","folk-chv"); });
 
   /* Header buttons */
+  updateNotifUI();
   var btnN = ge("btn-notif"); if(btnN) btnN.addEventListener("click", toggleNotif);
   var btnR = ge("btn-refresh"); if(btnR) btnR.addEventListener("click", doRefresh);
 
