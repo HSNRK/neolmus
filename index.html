@@ -98,25 +98,6 @@ a{text-decoration:none;color:inherit}
 .ev-detail.open{display:block}
 .ev-text{font-size:12px;line-height:1.9;color:#999;margin-top:10px}
 
-/* X DRAWER */
-#xdr{display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.88)}
-#xdr.open{display:flex;align-items:flex-end}
-#xpanel{background:#111;width:100%;border-radius:20px 20px 0 0;padding:20px 16px 40px;max-height:85vh;overflow-y:auto}
-.xp-title{font-size:17px;font-weight:800;color:#f0c040;margin-bottom:3px}
-.xp-sub{font-size:11px;color:#555;margin-bottom:16px}
-.xa-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #1a1a1a}
-.xa-user{flex:1;font-size:14px;font-weight:600;color:#e8e4dc}
-.xa-lang{font-size:10px;color:#888;background:#1c1c1e;padding:2px 7px;border-radius:8px}
-.xa-del{color:#c0392b;font-size:22px;font-weight:700;line-height:1;padding:0 4px}
-.xa-form{display:flex;gap:8px;margin-top:16px}
-.xa-input{flex:1;background:#0a0a0a;border:1px solid #2a2a2a;color:#e8e4dc;padding:10px 12px;border-radius:10px;font-size:13px;outline:none}
-.xa-input:focus{border-color:#f0c040}
-.xa-select{background:#0a0a0a;border:1px solid #2a2a2a;color:#aaa;padding:10px 8px;border-radius:10px;font-size:12px;outline:none}
-.btn-xa-add{background:#f0c040;color:#000;padding:10px 14px;border-radius:10px;font-size:12px;font-weight:700;border:none;cursor:pointer;white-space:nowrap}
-.btn-xa-close{width:100%;background:#1c1c1e;color:#888;padding:12px;border-radius:12px;font-size:13px;font-weight:600;border:none;cursor:pointer;margin-top:14px}
-.x-head{display:flex;align-items:center;justify-content:space-between;padding:14px 0 10px;border-bottom:1px solid #1a1a1a;margin-bottom:8px}
-.btn-x-manage{background:#1a1500;color:#f0c040;border:1px solid #b8860b;padding:6px 12px;border-radius:14px;font-size:11px;font-weight:600;cursor:pointer}
-
 /* TOAST */
 #toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);z-index:9999;background:#111;color:#f0c040;border:1px solid #b8860b;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:600;box-shadow:0 4px 24px rgba(0,0,0,.8);display:none;max-width:90vw;text-align:center}
 #toast.on{display:block;animation:tup .3s ease}
@@ -167,7 +148,7 @@ a{text-decoration:none;color:inherit}
   <button class="tab on" data-tab="tr">&#127481;&#127479; T&#252;rkiye</button>
   <button class="tab" data-tab="wo">&#127758; D&#252;nya</button>
   <button class="tab" data-tab="al">&#128240; T&#252;m&#252;</button>
-  <button class="tab" data-tab="xt">&#120143; Twitter</button>
+
 </nav>
 
 <div id="main">
@@ -202,34 +183,12 @@ a{text-decoration:none;color:inherit}
     <div id="list-al"></div>
   </div>
 
-  <div id="p-xt" style="display:none">
-    <div class="x-head">
-      <div class="n-title" style="font-size:18px">&#120143; Twitter Ak&#305;&#351;&#305;</div>
-      <button class="btn-x-manage" id="btn-x-manage">&#9881;&#65039; Hesaplar</button>
-    </div>
-    <div class="sp" id="sp-xt" style="margin-bottom:10px"></div>
-    <div id="list-xt"></div>
   </div>
 </div>
 
 <div id="sbar"></div>
 <div id="toast"></div>
 
-<div id="xdr">
-  <div id="xpanel">
-    <p class="xp-title">&#120143; Takip Edilen Hesaplar</p>
-    <p class="xp-sub">Maks. 10 hesap &#183; Yabanc&#305; dil se&#231;erseniz T&#252;rk&#231;e&#39;ye &#231;evrilir</p>
-    <div id="xa-list"></div>
-    <div class="xa-form" id="xa-form">
-      <input class="xa-input" id="xa-input" placeholder="@kullaniciadi" maxlength="30"/>
-      <select class="xa-select" id="xa-select">
-        <option value="tr">&#127481;&#127479; TR</option>
-        <option value="en">&#127760; &#199;eviri</option>
-      </select>
-      <button class="btn-xa-add" id="btn-xa-add">Ekle</button>
-    </div>
-    <button class="btn-xa-close" id="btn-xa-close">Kapat</button>
-  </div>
 </div>
 
 <script>
@@ -527,7 +486,7 @@ function loadHistory(){
           .map(function(e){ return {year:parseInt(e.year)||0, event:e.text}; })
           .filter(function(e){ return e.year>0 && e.event; })
           .sort(function(a,b){ return b.year-a.year; })
-          .slice(0,10);
+          .slice(0,25);
         CACHE.set(ck,evts); resolve(evts);
       })
       .catch(function(){
@@ -540,7 +499,7 @@ function loadHistory(){
               .map(function(e){ return {year:parseInt(e.year)||0, event:e.text}; })
               .filter(function(e){ return e.year>0; })
               .sort(function(a,b){ return b.year-a.year; })
-              .slice(0,10);
+              .slice(0,25);
             Promise.all(picked.map(function(e){
               return translate(e.event).then(function(t){ return {year:e.year,event:t}; });
             })).then(function(evts){ CACHE.set(ck,evts); resolve(evts); });
@@ -993,7 +952,7 @@ function setSpin(id, on){
 
 /* ── TABS ── */
 function switchTab(id){
-  ["tr","wo","al","xt"].forEach(function(t){
+  ["tr","wo","al"].forEach(function(t){
     var p = ge("p-"+t); if(p) p.style.display = t===id?"block":"none";
   });
   document.querySelectorAll(".tab").forEach(function(b){
