@@ -251,62 +251,41 @@ function fetchOneFeed(feedUrl, sourceName) {
   window.NEO_DEBUG = window.NEO_DEBUG || [];
   function dbg(msg){ window.NEO_DEBUG.push(sourceName + ": " + msg); }
 
-  /* Yöntem 1: allorigins RAW — tek adımda ham XML, uzun timeout (25 sn) */
+  var t0 = Date.now();
+  /* Yöntem 1: allorigins RAW */
   var raw = "https://api.allorigins.win/raw?url=" + encodeURIComponent(feedUrl);
   return xfetch(raw, 25000)
     .then(function(r){
-      if(!r.ok){ dbg("allorigins HTTP "+r.status); throw new Error("http"); }
+      if(!r.ok){ dbg("allorigins HTTP "+r.status+" ("+(Date.now()-t0)+"ms)"); throw new Error("http"); }
       return r.text();
     })
     .then(function(txt){
       var items = parseXML(txt, sourceName);
-      if(items.length){ dbg("allorigins OK ("+items.length+" öğe)"); return items; }
-      dbg("allorigins boş döndü, uzunluk=" + (txt?txt.length:0));
+      if(items.length){ dbg("allorigins OK ("+items.length+" öğe, "+(Date.now()-t0)+"ms)"); return items; }
+      dbg("allorigins boş, uzunluk=" + (txt?txt.length:0) + " (" + (Date.now()-t0) + "ms)");
       throw new Error("empty");
     })
     .catch(function(err1){
-      dbg("allorigins hata: " + (err1.message||err1));
-      /* Yöntem 2: corsproxy.io — yedek, yine uzun timeout */
+      dbg("allorigins " + (err1.name||"") + ": " + (err1.message||err1) + " [" + (Date.now()-t0) + "ms]");
+      var t1 = Date.now();
+      /* Yöntem 2: corsproxy.io */
       var cp = "https://corsproxy.io/?" + encodeURIComponent(feedUrl);
       return xfetch(cp, 25000)
         .then(function(r){
-          if(!r.ok){ dbg("corsproxy HTTP "+r.status); throw new Error("http"); }
+          if(!r.ok){ dbg("corsproxy HTTP "+r.status+" ["+(Date.now()-t1)+"ms]"); throw new Error("http"); }
           return r.text();
         })
         .then(function(txt){
           var items = parseXML(txt, sourceName);
-          if(items.length){ dbg("corsproxy OK ("+items.length+" öğe)"); return items; }
-          dbg("corsproxy boş döndü — TÜM YÖNTEMLER BAŞARISIZ");
+          if(items.length){ dbg("corsproxy OK ("+items.length+" öğe) ["+(Date.now()-t1)+"ms]"); return items; }
+          dbg("corsproxy boş — BAŞARISIZ [" + (Date.now()-t1) + "ms]");
           return [];
         })
         .catch(function(err2){
-          dbg("corsproxy hata: " + (err2.message||err2) + " — TÜM YÖNTEMLER BAŞARISIZ");
+          dbg("corsproxy " + (err2.name||"") + ": " + (err2.message||err2) + " — BAŞARISIZ [" + (Date.now()-t1) + "ms]");
           return [];
         });
     });
-}
-
-/* ── Sınırlı eşzamanlılık ile çalıştır (bağlantıyı boğmamak için) ── */
-function runLimited(tasks, limit){
-  return new Promise(function(resolve){
-    var results = new Array(tasks.length);
-    var idx = 0, active = 0, done = 0;
-    function next(){
-      if(done === tasks.length){ resolve(results); return; }
-      while(active < limit && idx < tasks.length){
-        (function(i){
-          active++;
-          tasks[i]().then(function(r){
-            results[i] = r; active--; done++; next();
-          }).catch(function(){
-            results[i] = []; active--; done++; next();
-          });
-        })(idx);
-        idx++;
-      }
-    }
-    next();
-  });
 }
 
 /* ── TÜM TR HABERLERİ ── */
@@ -399,7 +378,7 @@ function loadHistory() {
     var ck="hist_"+m+"_"+d;
     var cached=cGet(ck,43200000);
     if(cached){resolve(cached);return;}
-    xfetch("https://tr.wikipedia.org/api/rest_v1/feed/onthisday/events/"+m+"/"+d,10000)
+    xfetch("https://tr.wikipedia.org/api/rest_v1/feed/onthisday/events/"+m+"/"+d,20000)
       .then(function(r){return r.json();})
       .then(function(data){
         if(!data.events||!data.events.length)throw 0;
@@ -410,7 +389,7 @@ function loadHistory() {
           .slice(0,25);
         cSet(ck,evts);resolve(evts);
       }).catch(function(){
-        xfetch("https://en.wikipedia.org/api/rest_v1/feed/onthisday/events/"+m+"/"+d,10000)
+        xfetch("https://en.wikipedia.org/api/rest_v1/feed/onthisday/events/"+m+"/"+d,20000)
           .then(function(r){return r.json();})
           .then(function(data){
             if(!data.events||!data.events.length){resolve([]);return;}
