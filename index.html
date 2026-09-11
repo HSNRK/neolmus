@@ -248,11 +248,18 @@ function parseXML(txt, sourceName) {
 
 /* ── TEK KAYNAK İÇİN RSS ÇEK (3 yöntem) ── */
 function fetchOneFeed(feedUrl, sourceName) {
+  window.NEO_DEBUG = window.NEO_DEBUG || [];
+  function dbg(msg){ window.NEO_DEBUG.push(sourceName + ": " + msg); }
+
   /* Yöntem 1: rss2json.com — JSON döndürür, CORS sorunu yok */
   return xfetch("https://api.rss2json.com/v1/api.json?rss_url="+encodeURIComponent(feedUrl)+"&count=5", 10000)
-    .then(function(r){ return r.json(); })
+    .then(function(r){
+      if(!r.ok){ dbg("rss2json HTTP "+r.status); throw new Error("http"); }
+      return r.json();
+    })
     .then(function(d){
       if(d.status==="ok" && d.items && d.items.length) {
+        dbg("rss2json OK ("+d.items.length+" öğe)");
         return d.items.slice(0,5).map(function(item){
           return {
             title:   stripHtml(item.title||""),
@@ -263,26 +270,54 @@ function fetchOneFeed(feedUrl, sourceName) {
           };
         }).filter(function(i){ return i.title && i.title.length>3; });
       }
+      dbg("rss2json status=" + (d.status||"?") + " msg=" + (d.message||""));
       throw new Error("rss2json empty");
     })
-    .catch(function() {
+    .catch(function(err1) {
+      dbg("rss2json hata: " + (err1.message||err1));
       /* Yöntem 2: allorigins — ham XML döndürür */
       return xfetch("https://api.allorigins.win/get?url="+encodeURIComponent(feedUrl), 10000)
-        .then(function(r){ return r.json(); })
+        .then(function(r){
+          if(!r.ok){ dbg("allorigins HTTP "+r.status); throw new Error("http"); }
+          return r.json();
+        })
         .then(function(d){
           var txt = d.contents || "";
           var items = parseXML(txt, sourceName);
-          if(items.length) return items;
+          if(items.length){ dbg("allorigins OK ("+items.length+" öğe)"); return items; }
+          dbg("allorigins XML boş/parse edilemedi, uzunluk=" + txt.length);
           throw new Error("allorigins empty");
         })
-        .catch(function(){
+        .catch(function(err2){
+          dbg("allorigins hata: " + (err2.message||err2));
           /* Yöntem 3: corsproxy.io */
           return xfetch("https://corsproxy.io/?"+encodeURIComponent(feedUrl), 10000)
-            .then(function(r){ return r.text(); })
-            .then(function(txt){
-              return parseXML(txt, sourceName);
+            .then(function(r){
+              if(!r.ok){ dbg("corsproxy HTTP "+r.status); throw new Error("http"); }
+              return r.text();
             })
-            .catch(function(){ return []; });
+            .then(function(txt){
+              var items = parseXML(txt, sourceName);
+              if(items.length){ dbg("corsproxy OK ("+items.length+" öğe)"); return items; }
+              dbg("corsproxy XML boş, uzunluk=" + txt.length);
+              throw new Error("corsproxy empty");
+            })
+            .catch(function(err3){
+              dbg("corsproxy hata: " + (err3.message||err3));
+              /* Yöntem 4: codetabs proxy (son çare) */
+              return xfetch("https://api.codetabs.com/v1/proxy?quest="+encodeURIComponent(feedUrl), 10000)
+                .then(function(r){ return r.text(); })
+                .then(function(txt){
+                  var items = parseXML(txt, sourceName);
+                  if(items.length){ dbg("codetabs OK ("+items.length+" öğe)"); return items; }
+                  dbg("codetabs de boş döndü — TÜM YÖNTEMLER BAŞARISIZ");
+                  return [];
+                })
+                .catch(function(err4){
+                  dbg("codetabs hata: " + (err4.message||err4) + " — TÜM YÖNTEMLER BAŞARISIZ");
+                  return [];
+                });
+            });
         });
     });
 }
@@ -567,7 +602,12 @@ function renderNews(items, listId, cntId, staleId){
   var el=ge(listId), cnt=cntId?ge(cntId):null, stEl=staleId?ge(staleId):null;
   if(stEl) stEl.innerHTML="";
   if(!items||!items.length){
-    el.innerHTML='<div class="empty">Haber yüklenemedi. 🔄 Yenile butonuna basın.</div>';
+    var dbgHtml = "";
+    if(window.NEO_DEBUG && window.NEO_DEBUG.length){
+      dbgHtml = '<div style="text-align:left;background:#111;border:1px solid #333;border-radius:8px;padding:10px;margin-top:16px;font-size:10px;color:#888;font-family:monospace;white-space:pre-wrap;word-break:break-word">' +
+        esc(window.NEO_DEBUG.slice(-12).join("\n")) + '</div>';
+    }
+    el.innerHTML='<div class="empty">Haber yüklenemedi. 🔄 Yenile butonuna basın.' + dbgHtml + '</div>';
     if(cnt)cnt.style.display="none";return;
   }
   if(cnt){cnt.textContent=items.length+" haber";cnt.style.display="inline";}
