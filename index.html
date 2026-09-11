@@ -251,75 +251,62 @@ function fetchOneFeed(feedUrl, sourceName) {
   window.NEO_DEBUG = window.NEO_DEBUG || [];
   function dbg(msg){ window.NEO_DEBUG.push(sourceName + ": " + msg); }
 
-  /* Yöntem 1: rss2json.com — JSON döndürür, CORS sorunu yok */
-  return xfetch("https://api.rss2json.com/v1/api.json?rss_url="+encodeURIComponent(feedUrl)+"&count=5", 10000)
+  /* Yöntem 1: allorigins RAW — tek adımda ham XML, uzun timeout (25 sn) */
+  var raw = "https://api.allorigins.win/raw?url=" + encodeURIComponent(feedUrl);
+  return xfetch(raw, 25000)
     .then(function(r){
-      if(!r.ok){ dbg("rss2json HTTP "+r.status); throw new Error("http"); }
-      return r.json();
+      if(!r.ok){ dbg("allorigins HTTP "+r.status); throw new Error("http"); }
+      return r.text();
     })
-    .then(function(d){
-      if(d.status==="ok" && d.items && d.items.length) {
-        dbg("rss2json OK ("+d.items.length+" öğe)");
-        return d.items.slice(0,5).map(function(item){
-          return {
-            title:   stripHtml(item.title||""),
-            summary: stripHtml(item.description||item.content||"").slice(0,250),
-            url:     item.link||"",
-            source:  sourceName,
-            pub:     item.pubDate||new Date().toISOString()
-          };
-        }).filter(function(i){ return i.title && i.title.length>3; });
-      }
-      dbg("rss2json status=" + (d.status||"?") + " msg=" + (d.message||""));
-      throw new Error("rss2json empty");
+    .then(function(txt){
+      var items = parseXML(txt, sourceName);
+      if(items.length){ dbg("allorigins OK ("+items.length+" öğe)"); return items; }
+      dbg("allorigins boş döndü, uzunluk=" + (txt?txt.length:0));
+      throw new Error("empty");
     })
-    .catch(function(err1) {
-      dbg("rss2json hata: " + (err1.message||err1));
-      /* Yöntem 2: allorigins — ham XML döndürür */
-      return xfetch("https://api.allorigins.win/get?url="+encodeURIComponent(feedUrl), 10000)
+    .catch(function(err1){
+      dbg("allorigins hata: " + (err1.message||err1));
+      /* Yöntem 2: corsproxy.io — yedek, yine uzun timeout */
+      var cp = "https://corsproxy.io/?" + encodeURIComponent(feedUrl);
+      return xfetch(cp, 25000)
         .then(function(r){
-          if(!r.ok){ dbg("allorigins HTTP "+r.status); throw new Error("http"); }
-          return r.json();
+          if(!r.ok){ dbg("corsproxy HTTP "+r.status); throw new Error("http"); }
+          return r.text();
         })
-        .then(function(d){
-          var txt = d.contents || "";
+        .then(function(txt){
           var items = parseXML(txt, sourceName);
-          if(items.length){ dbg("allorigins OK ("+items.length+" öğe)"); return items; }
-          dbg("allorigins XML boş/parse edilemedi, uzunluk=" + txt.length);
-          throw new Error("allorigins empty");
+          if(items.length){ dbg("corsproxy OK ("+items.length+" öğe)"); return items; }
+          dbg("corsproxy boş döndü — TÜM YÖNTEMLER BAŞARISIZ");
+          return [];
         })
         .catch(function(err2){
-          dbg("allorigins hata: " + (err2.message||err2));
-          /* Yöntem 3: corsproxy.io */
-          return xfetch("https://corsproxy.io/?"+encodeURIComponent(feedUrl), 10000)
-            .then(function(r){
-              if(!r.ok){ dbg("corsproxy HTTP "+r.status); throw new Error("http"); }
-              return r.text();
-            })
-            .then(function(txt){
-              var items = parseXML(txt, sourceName);
-              if(items.length){ dbg("corsproxy OK ("+items.length+" öğe)"); return items; }
-              dbg("corsproxy XML boş, uzunluk=" + txt.length);
-              throw new Error("corsproxy empty");
-            })
-            .catch(function(err3){
-              dbg("corsproxy hata: " + (err3.message||err3));
-              /* Yöntem 4: codetabs proxy (son çare) */
-              return xfetch("https://api.codetabs.com/v1/proxy?quest="+encodeURIComponent(feedUrl), 10000)
-                .then(function(r){ return r.text(); })
-                .then(function(txt){
-                  var items = parseXML(txt, sourceName);
-                  if(items.length){ dbg("codetabs OK ("+items.length+" öğe)"); return items; }
-                  dbg("codetabs de boş döndü — TÜM YÖNTEMLER BAŞARISIZ");
-                  return [];
-                })
-                .catch(function(err4){
-                  dbg("codetabs hata: " + (err4.message||err4) + " — TÜM YÖNTEMLER BAŞARISIZ");
-                  return [];
-                });
-            });
+          dbg("corsproxy hata: " + (err2.message||err2) + " — TÜM YÖNTEMLER BAŞARISIZ");
+          return [];
         });
     });
+}
+
+/* ── Sınırlı eşzamanlılık ile çalıştır (bağlantıyı boğmamak için) ── */
+function runLimited(tasks, limit){
+  return new Promise(function(resolve){
+    var results = new Array(tasks.length);
+    var idx = 0, active = 0, done = 0;
+    function next(){
+      if(done === tasks.length){ resolve(results); return; }
+      while(active < limit && idx < tasks.length){
+        (function(i){
+          active++;
+          tasks[i]().then(function(r){
+            results[i] = r; active--; done++; next();
+          }).catch(function(){
+            results[i] = []; active--; done++; next();
+          });
+        })(idx);
+        idx++;
+      }
+    }
+    next();
+  });
 }
 
 /* ── TÜM TR HABERLERİ ── */
@@ -328,7 +315,7 @@ function loadTR() {
     var cached = cGet("tr");
     if(cached) { resolve({data:cached, stale:false}); return; }
     setSp("tr",true); setSp("al",true);
-    Promise.all(TR_FEEDS.map(function(s){ return fetchOneFeed(s.u, s.n); }))
+    runLimited(TR_FEEDS.map(function(s){ return function(){ return fetchOneFeed(s.u, s.n); }; }), 2)
       .then(function(results){
         var all = [];
         results.forEach(function(r){ all = all.concat(r||[]); });
@@ -347,7 +334,7 @@ function loadWO() {
     var cached = cGet("wo");
     if(cached) { resolve({data:cached, stale:false}); return; }
     setSp("wo",true);
-    Promise.all(WO_FEEDS.map(function(s){ return fetchOneFeed(s.u, s.n); }))
+    runLimited(WO_FEEDS.map(function(s){ return function(){ return fetchOneFeed(s.u, s.n); }; }), 2)
       .then(function(results){
         var all = [];
         results.forEach(function(r){ all = all.concat(r||[]); });
