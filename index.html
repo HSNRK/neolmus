@@ -39,6 +39,7 @@ a{text-decoration:none;color:inherit}
 .n-title{font-size:20px;font-weight:800;color:#fff}
 .n-cnt{background:#222;color:#888;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600}
 .note{font-size:10px;color:#3a5a3a;font-style:italic;margin-bottom:10px}
+.note.tr-active{color:#f0c040}
 .sp{width:15px;height:15px;border:2px solid #222;border-top-color:#f0c040;border-radius:50%;animation:spn .8s linear infinite;display:none;flex-shrink:0}
 .sp.on{display:block}
 @keyframes spn{to{transform:rotate(360deg)}}
@@ -51,6 +52,7 @@ a{text-decoration:none;color:inherit}
 .nc-src{font-size:10px;font-weight:700;color:#fff;background:#c0392b;padding:2px 7px;border-radius:3px;text-transform:uppercase;flex-shrink:0}
 .nc-dt{font-size:10px;color:#333}
 .nc-title{font-size:14px;font-weight:700;line-height:1.45;color:#e8e4dc;cursor:pointer;margin-bottom:6px}
+.nc-orig{font-size:10px;color:#444;font-style:italic;margin-bottom:6px;line-height:1.4}
 .nc-body{font-size:12px;line-height:1.7;color:#666;margin-bottom:8px;display:none}
 .nc-body.open{display:block}
 .nc-footer{display:flex;gap:10px;align-items:center}
@@ -123,7 +125,7 @@ a{text-decoration:none;color:inherit}
   </div>
   <div id="p-wo" style="display:none">
     <div class="n-head"><div class="n-title">Dünya'dan Haberler</div><div class="n-cnt" id="cnt-wo" style="display:none"></div><div class="sp" id="sp-wo"></div></div>
-    <p class="note" id="note-wo">🌐 Başlıklar arka planda Türkçe'ye çevriliyor...</p>
+    <p class="note" id="note-wo">🌐 Başlıklar ve özetler Türkçe'ye çevriliyor...</p>
     <div id="stale-wo"></div><div id="list-wo"></div>
   </div>
   <div id="p-al" style="display:none">
@@ -136,23 +138,26 @@ a{text-decoration:none;color:inherit}
 <div id="toast"></div>
 <script>
 /* ═══════════════════════════════════
-   Ne Olmuş — Safari uyumlu, proxy'siz
-   - Doğrudan RSS çekme (CORS dostu kaynaklar)
-   - İngilizce Wikipedia fallback
-   - Bol hata ayıklama bilgisi
+   Ne Olmuş — Safari uyumlu
+   - Genişletilmiş kaynak listesi
+   - Tam çeviri (başlık + özet)
 ═══════════════════════════════════ */
 
+/* ── TÜRKİYE KAYNAKLARI ── */
 var TR_FEEDS = [
-  {n:"Habertürk",  u:"https://www.haberturk.com/rss"},
-  {n:"NTV",        u:"https://www.ntv.com.tr/son-dakika.rss"},
-  {n:"Hürriyet",   u:"https://www.hurriyet.com.tr/rss/anasayfa"},
-  {n:"CNN Türk",   u:"https://www.cnnturk.com/feed/rss/all/news"}
+  {n:"Sözcü",     u:"https://www.sozcu.com.tr/rss.xml"},
+  {n:"NTV",       u:"https://www.ntv.com.tr/son-dakika.rss"},
+  {n:"Nefes",     u:"https://www.nefes.com.tr/rss"},
+  {n:"Habertürk", u:"https://www.haberturk.com/rss"}
 ];
 
+/* ── DÜNYA KAYNAKLARI ── */
 var WO_FEEDS = [
   {n:"BBC World",  u:"https://feeds.bbci.co.uk/news/world/rss.xml"},
-  {n:"NY Times",   u:"https://rss.nytimes.com/services/xml/rss/nyt/World.xml"},
   {n:"Al Jazeera", u:"https://www.aljazeera.com/xml/rss/all.xml"},
+  {n:"CNN",        u:"https://rss.cnn.com/rss/edition_world.rss"},
+  {n:"The Times",  u:"https://www.thetimes.co.uk/rss/world"},
+  {n:"NY Post",    u:"https://nypost.com/world-news/feed/"},
   {n:"Sky News",   u:"https://feeds.skynews.com/feeds/rss/world.xml"}
 ];
 
@@ -217,7 +222,7 @@ function isBreaking(t) {
   return false;
 }
 
-/* ── runLimited: paralel görev limiti ── */
+/* ── runLimited ── */
 function runLimited(tasks, limit) {
   return new Promise(function(resolve){
     var results = new Array(tasks.length);
@@ -246,7 +251,7 @@ function parseXML(txt, sourceName) {
     if(doc.querySelector("parsererror")) doc = new DOMParser().parseFromString(txt, "text/html");
     var items = Array.prototype.slice.call(doc.querySelectorAll("item,entry"));
     var out = [];
-    for(var i=0; i<Math.min(items.length,6); i++) {
+    for(var i=0; i<Math.min(items.length,8); i++) {
       var item = items[i];
       var te = item.querySelector("title");
       var title = stripHtml(te ? te.textContent : "");
@@ -259,7 +264,7 @@ function parseXML(txt, sourceName) {
         if(g2) { var gv=stripHtml(g2.textContent); if(gv.indexOf("http")===0) url=gv; }
       }
       var de = item.querySelector("description")||item.querySelector("summary")||item.querySelector("content");
-      var summ = de ? stripHtml(de.textContent).slice(0,250) : "";
+      var summ = de ? stripHtml(de.textContent).slice(0,300) : "";
       var dte = item.querySelector("pubDate")||item.querySelector("published")||item.querySelector("updated");
       var pub = new Date().toISOString();
       if(dte){ var pd=new Date(stripHtml(dte.textContent)); if(!isNaN(pd)) pub=pd.toISOString(); }
@@ -272,7 +277,6 @@ function parseXML(txt, sourceName) {
 /* ── TEK KAYNAK ÇEK ── */
 function fetchOneFeed(feedUrl, sourceName) {
   var t0 = Date.now();
-  dbg(sourceName+": deneniyor...");
   return xfetch(feedUrl, 10000)
     .then(function(r){
       if(!r.ok){ dbg(sourceName+": HTTP "+r.status); throw new Error("http"+r.status); }
@@ -302,7 +306,7 @@ function loadTR() {
         var all = [];
         results.forEach(function(r){ all = all.concat(r||[]); });
         all.sort(function(a,b){ return new Date(b.pub)-new Date(a.pub); });
-        all = all.slice(0,15);
+        all = all.slice(0,20);
         setSp("tr",false);
         dbg("TR toplam: "+all.length+" haber");
         if(all.length) { cSet("tr",all); resolve({data:all,stale:false}); }
@@ -311,7 +315,7 @@ function loadTR() {
   });
 }
 
-/* ── DÜNYA HABERLERİ ── */
+/* ── DÜNYA HABERLERİ (tam çeviri) ── */
 function loadWO() {
   return new Promise(function(resolve){
     var cached = cGet("wo");
@@ -323,84 +327,138 @@ function loadWO() {
         var all = [];
         results.forEach(function(r){ all = all.concat(r||[]); });
         all.sort(function(a,b){ return new Date(b.pub)-new Date(a.pub); });
-        all = all.slice(0,15);
+        all = all.slice(0,18);
         setSp("wo",false);
-        dbg("Dünya toplam: "+all.length+" haber");
+        dbg("Dünya toplam (çeviri öncesi): "+all.length+" haber");
         if(!all.length) { var o=cGetOld("wo"); resolve({data:o?o.v:[],stale:true,at:o?o.t:0}); return; }
+
+        /* Önce İngilizce göster */
         resolve({data:all,stale:false});
-        cSet("wo",all);
-        /* Çeviri arka planda */
-        translateItems(all, function(translated){
-          cSet("wo",translated);
-          var pwo=ge("p-wo");
-          if(pwo && pwo.style.display!=="none") renderNews(translated,"list-wo","cnt-wo","stale-wo");
-          var trData=cGet("tr");
+
+        /* Arka planda TAM çeviri (başlık + özet) */
+        var noteEl = ge("note-wo");
+        if(noteEl){ noteEl.textContent = "🌐 Haberler Türkçe'ye çevriliyor..."; noteEl.classList.add("tr-active"); }
+
+        translateAll(all, function(translated){
+          cSet("wo", translated);
+          renderNews(translated, "list-wo", "cnt-wo", "stale-wo");
+          if(noteEl){ noteEl.textContent = "🌐 Tüm başlıklar ve özetler Türkçe'ye çevrildi"; noteEl.classList.remove("tr-active"); }
+
+          /* Tümü sekmesini güncelle */
+          var trData = cGet("tr");
           if(trData){
-            var combined=(trData||[]).concat(translated||[])
-              .sort(function(a,b){return new Date(b.pub)-new Date(a.pub);}).slice(0,18);
-            renderNews(combined,"list-al","cnt-al",null);
+            var combined = (trData||[]).concat(translated||[])
+              .sort(function(a,b){return new Date(b.pub)-new Date(a.pub);}).slice(0,20);
+            renderNews(combined, "list-al", "cnt-al", null);
           }
+          var noteAl = ge("note-al");
+          if(noteAl) noteAl.style.display = "block";
+          toast("✅ Dünya haberleri Türkçe'ye çevrildi");
         });
       });
   });
 }
 
-/* ── ÇEVİRİ ── */
-function translateItems(items, callback) {
-  var translated = [];
+/* ── TAM ÇEVİRİ (başlık + özet) ── */
+function translateAll(items, callback) {
+  var out = [];
   var pending = items.length;
-  if(!pending) { callback([]); return; }
+  if(!pending){ callback([]); return; }
   items.forEach(function(item, idx){
-    translateOne(item.title, function(t){
-      translated[idx] = Object.assign({}, item, {title:t, origTitle:item.title});
-      pending--;
-      if(pending === 0) callback(translated);
+    var titleDone = false, summDone = false;
+    var newItem = Object.assign({}, item);
+
+    function checkDone(){
+      if(titleDone && summDone){
+        pending--;
+        if(pending === 0) callback(out);
+      }
+    }
+
+    /* Başlık çevirisi */
+    translateOne(item.title, "en", "tr", function(t){
+      newItem.title = t || item.title;
+      newItem.origTitle = item.title;
+      titleDone = true;
+      checkDone();
     });
+
+    /* Özet çevirisi (varsa) */
+    if(item.summary && item.summary.length > 10){
+      translateOne(item.summary, "en", "tr", function(s){
+        newItem.summary = s || item.summary;
+        newItem.origSummary = item.summary;
+        summDone = true;
+        checkDone();
+      });
+    } else {
+      summDone = true;
+    }
+
+    out[idx] = newItem;
   });
 }
-function translateOne(text, cb) {
-  if(!text || text.length < 3) { cb(text); return; }
-  var t = text.slice(0,400);
-  var ck = "tx_"+t.slice(0,16).replace(/[^a-z0-9]/gi,"");
-  var hit = cGet(ck, 86400000);
-  if(hit) { cb(hit); return; }
-  xfetch("https://api.mymemory.translated.net/get?q="+encodeURIComponent(t)+"&langpair=en|tr", 8000)
-    .then(function(r){ return r.json(); })
-    .then(function(d){
-      if(d.responseStatus===200 && d.responseData && d.responseData.translatedText){
-        cSet(ck, d.responseData.translatedText);
-        cb(d.responseData.translatedText);
-      } else cb(text);
+
+/* ── Google Translate ücretsiz uç noktası ile çeviri ── */
+function translateOne(text, from, to, cb) {
+  if(!text || text.length < 3){ cb(text); return; }
+  var t = text.slice(0, 1500);
+  var ck = "gtx_" + from + "_" + to + "_" + t.slice(0,24).replace(/[^a-z0-9]/gi,"");
+  var hit = cGet(ck, 2592000000); /* 30 gün */
+  if(hit){ cb(hit); return; }
+
+  var url = "https://translate.googleapis.com/translate_a/single?client=gtx&sl="
+    + from + "&tl=" + to + "&dt=t&q=" + encodeURIComponent(t);
+
+  xfetch(url, 9000)
+    .then(function(r){
+      if(!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
     })
-    .catch(function(){ cb(text); });
+    .then(function(d){
+      /* Google yanıtı: [[["çeviri","orijinal",null,null,...],...],...] */
+      var result = "";
+      if(Array.isArray(d) && Array.isArray(d[0])){
+        d[0].forEach(function(part){
+          if(part && part[0]) result += part[0];
+        });
+      }
+      if(result && result.length > 0){
+        cSet(ck, result);
+        cb(result);
+      } else {
+        cb(text);
+      }
+    })
+    .catch(function(err){
+      dbg("Çeviri hatası: " + (err.message||err));
+      cb(text);
+    });
 }
 
-/* ── TARİHTE BUGÜN (İngilizce Wikipedia) ── */
+/* ── TARİHTE BUGÜN ── */
 function loadHistory() {
   return new Promise(function(resolve){
     var td=new Date(), m=td.getMonth()+1, d=td.getDate();
     var ck="hist_"+m+"_"+d;
     var cached=cGet(ck,43200000);
     if(cached){resolve(cached);return;}
-    dbg("Tarihte Bugün: Wikipedia EN deneniyor...");
     xfetch("https://en.wikipedia.org/api/rest_v1/feed/onthisday/events/"+m+"/"+d,15000)
       .then(function(r){ if(!r.ok) throw new Error("HTTP "+r.status); return r.json(); })
       .then(function(data){
-        if(!data.events||!data.events.length){ dbg("Tarihte Bugün: boş"); resolve([]); return; }
+        if(!data.events||!data.events.length){ resolve([]); return; }
         var evts=data.events
           .map(function(e){return{year:parseInt(e.year)||0,event:e.text};})
           .filter(function(e){return e.year>0&&e.event;})
           .sort(function(a,b){return b.year-a.year;})
           .slice(0,20);
-        dbg("Tarihte Bugün: ✓ "+evts.length+" olay");
         cSet(ck,evts);resolve(evts);
-      }).catch(function(err){ dbg("Tarihte Bugün: ✗ "+(err.message||err)); resolve([]); });
+      }).catch(function(){ resolve([]); });
   });
 }
 
 /* ── SAATLİ MAARİF TAKVİMİ ── */
 var FOLK=[
-  /* Eylül–Ekim 2026 civarı kesin eşleşenler */
   {id:"mihrican",nm:"Mihrican — Bostan Bozan",em:"🍂",sM:9,sD:22,eM:9,eD:29,tp:"p",sh:"22–29 Eylül: Sonbahar ekinoksu",fl:"Sonbahar ekinoksunu (22 Eylül) kapsayan halk takvimi dönemidir. 'Bostan Bozan' da denir çünkü bahçe ürünleri artık bozulmaya başlar."},
   {id:"terazi",nm:"Terazi Doğumu",em:"⚖️",sM:9,sD:23,eM:10,eD:22,tp:"p",sh:"23 Eyl–22 Eki: Terazi burcunun dönemi",fl:"Terazi (Libra) takımyıldızının göründüğü dönemdir. Sonbahar ekinosuyla başlar. Hasat mevsiminin sonu, kışa hazırlık zamanıdır."},
   {id:"kuyruk",nm:"Kuyruk Doğumu",em:"🦂",sM:10,sD:23,eM:11,eD:21,tp:"p",sh:"23 Eki–21 Kas: Akrep burcunun dönemi",fl:"Akrep (Scorpius) takımyıldızının göründüğü dönemdir. Halk astrolojisinde soğukların başlamasıyla ilişkilendirilir."},
@@ -443,7 +501,6 @@ function getActiveEvents(){
     }
   });
   results.sort(function(a,b){return a.ds-b.ds;});
-  dbg("Takvim: "+results.length+" aktif olay bulundu");
   return results;
 }
 
@@ -479,6 +536,10 @@ function renderNews(items, listId, cntId, staleId){
     if(brk)h+='<div class="brk-lbl">🔴 SON DAKİKA</div>';
     h+='<div class="nc-meta"><span class="nc-src">'+esc(it.source)+'</span><span class="nc-dt">'+timeAgo(it.pub)+'</span></div>';
     h+='<div class="nc-title">'+esc(it.title)+'</div>';
+    /* Orijinal başlık (varsa) */
+    if(it.origTitle && it.origTitle !== it.title){
+      h+='<div class="nc-orig">🇬🇧 '+esc(it.origTitle)+'</div>';
+    }
     h+='<div class="nc-body">'+esc(it.summary||"Haberin tamamı için kaynağa gidin.")+'</div>';
     h+='<div class="nc-footer"><button class="btn-detail">Özet</button>';
     if(it.url&&it.url.indexOf("http")===0)
@@ -500,7 +561,7 @@ function renderNews(items, listId, cntId, staleId){
 function renderHistory(evts){
   var el=ge("hist-content");
   if(!evts||!evts.length){
-    el.innerHTML='<p class="empty">Tarihsel veri yüklenemedi.<br><span style="font-size:10px;color:#333">Wikipedia EN: en.wikipedia.org/api/rest_v1/feed/onthisday/events/... </span></p>';
+    el.innerHTML='<p class="empty">Tarihsel veri yüklenemedi.</p>';
     return;
   }
   var h="";
@@ -513,7 +574,7 @@ function renderHistory(evts){
 function renderFolk(){
   var el=ge("folk-content"),evts=getActiveEvents();
   if(!evts.length){
-    el.innerHTML='<p class="empty">Bu dönemde aktif takvim olayı yok.<br><span style="font-size:10px;color:#333">Debug: FOLK='+FOLK.length+' olay, bugün='+new Date().toLocaleDateString("tr-TR")+'</span></p>';
+    el.innerHTML='<p class="empty">Bu dönemde aktif takvim olayı yok.</p>';
     return;
   }
   function badgeClr(st){return st==="act"?"#c0392b":st==="soon"?"#e67e22":"#555";}
@@ -614,18 +675,19 @@ function doRefresh(){
   ["stale-tr","stale-wo"].forEach(function(id){var el=ge(id);if(el)el.innerHTML="";});
   var hc=ge("hist-content");if(hc)hc.innerHTML=makeSkel(3);
   ["tr","wo","al"].forEach(function(t){setSp(t,true);});
+  var noteEl=ge("note-wo");
+  if(noteEl){ noteEl.textContent="🌐 Başlıklar ve özetler Türkçe'ye çevriliyor..."; noteEl.classList.remove("tr-active"); }
   Promise.all([loadTR(),loadWO(),loadHistory()]).then(function(res){
     var tr=res[0],wo=res[1],hist=res[2];
     renderNews(tr.data,"list-tr","cnt-tr","stale-tr");
     renderNews(wo.data,"list-wo","cnt-wo","stale-wo");
-    var all=(tr.data||[]).concat(wo.data||[]).sort(function(a,b){return new Date(b.pub)-new Date(a.pub);}).slice(0,18);
+    var all=(tr.data||[]).concat(wo.data||[]).sort(function(a,b){return new Date(b.pub)-new Date(a.pub);}).slice(0,20);
     renderNews(all,"list-al","cnt-al",null);
     var an=ge("note-al");if(an)an.style.display=(wo.data||[]).length>0?"block":"none";
     renderHistory(hist);
     ["tr","wo","al"].forEach(function(t){setSp(t,false);});setUpd();
     var tl=(tr.data||[]).length,wl=(wo.data||[]).length;
     setStatus(tl+" TR + "+wl+" Dünya");
-    toast("✅ "+tl+" TR + "+wl+" haber yüklendi");
     checkBreaking((tr.data||[]).concat(wo.data||[]));
   });
 }
@@ -655,7 +717,7 @@ document.addEventListener("DOMContentLoaded",function(){
     var tr=res[0],wo=res[1],hist=res[2];
     renderNews(tr.data,"list-tr","cnt-tr","stale-tr");
     renderNews(wo.data,"list-wo","cnt-wo","stale-wo");
-    var all=(tr.data||[]).concat(wo.data||[]).sort(function(a,b){return new Date(b.pub)-new Date(a.pub);}).slice(0,18);
+    var all=(tr.data||[]).concat(wo.data||[]).sort(function(a,b){return new Date(b.pub)-new Date(a.pub);}).slice(0,20);
     renderNews(all,"list-al","cnt-al",null);
     var an=ge("note-al");if(an)an.style.display=(wo.data||[]).length>0?"block":"none";
     renderHistory(hist);
@@ -671,7 +733,7 @@ document.addEventListener("DOMContentLoaded",function(){
         var t2=r2[0],w2=r2[1];
         renderNews(t2.data,"list-tr","cnt-tr","stale-tr");
         renderNews(w2.data,"list-wo","cnt-wo","stale-wo");
-        var a=(t2.data||[]).concat(w2.data||[]).sort(function(a,b){return new Date(b.pub)-new Date(a.pub);}).slice(0,18);
+        var a=(t2.data||[]).concat(w2.data||[]).sort(function(a,b){return new Date(b.pub)-new Date(a.pub);}).slice(0,20);
         renderNews(a,"list-al","cnt-al",null);
         setUpd();
         var tl2=(t2.data||[]).length,wl2=(w2.data||[]).length;
