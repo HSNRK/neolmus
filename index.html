@@ -478,4 +478,316 @@ var FOLK=[
   {id:"gavur",nm:"Gâvurun Küfrü",em:"⚡",m:3,d:9,tp:"s",sh:"9 Mart: Mart'ın aldatıcı soğuğu",fl:"9 Mart civarında görülen beklenmedik soğuk ve fırtınayı ifade eder."},
   {id:"beldir",nm:"Beldir Aciz — Kocakarı Soğukları",em:"👵",sM:3,sD:11,eM:3,eD:17,tp:"p",sh:"11–17 Mart: Mart'ın sayılı fırtınası",fl:"'Üçü şubatta, dördü martta.' 11–17 Mart arasında devam eden sayılı fırtınadır."},
   {id:"nevruz",nm:"Nevruz",em:"🌼",m:3,d:21,tp:"s",sh:"21 Mart: Bahar ekinoksu",fl:"Farsça 'yeni gün' anlamına gelir. Bahar ekinoksunda kutlanır."},
-  {id:"martdokuzu",nm:"Mart İki Dok
+  {id:"martdokuzu",nm:"Mart İki Dokuzu",em:"🌪️",m:3,d:29,tp:"s",sh:"29 Mart: Mart'ın son sert günü",fl:"'Martın dokuzu geçti mi, baharın sesi duyulur.' Bu tarihten sonra hava gerçek anlamda baharlaşır."},
+  {id:"paskalya",nm:"Paskalya",em:"🐣",m:0,d:0,tp:"s",dyn:"easter",sh:"Hristiyan Paskalyası",fl:"Hz. İsa'nın dirilişini kutlayan en önemli Hristiyan bayramıdır."},
+  {id:"abril",nm:"Abrıl Beşi Fırtınası",em:"⛈️",m:4,d:5,tp:"s",sh:"5 Nisan: Nisan'ın ilk fırtınası",fl:"'Abrıl' Nisan'ın eski adıdır. Bahar yerleşmeden gelen son sert hava olayıdır."},
+  {id:"sitte",nm:"Sitte Sevir",em:"🌡️",sM:4,sD:25,eM:5,eD:5,tp:"p",sh:"25 Nisan–5 Mayıs: Son bahar soğukları",fl:"25 Nisan–5 Mayıs arası geçici soğuma dönemidir."},
+  {id:"hfirtina",nm:"Hıdrellez Fırtınası",em:"⛈️",sM:4,sD:23,eM:5,eD:6,tp:"p",sh:"Hıdrellez etrafındaki fırtına dönemi",fl:"Hıdrellez (5–6 Mayıs) etrafındaki bahar fırtınalarıdır."},
+  {id:"mayis1",nm:"1 Mayıs İşçi Bayramı",em:"✊",m:5,d:1,tp:"s",sh:"Emek ve Dayanışma Günü",fl:"1886 Chicago Haymarket olaylarının anısına kutlanan dünya işçilerinin ortak bayramıdır."},
+  {id:"hidrellez",nm:"Hıdrellez",em:"🌸",sM:5,sD:5,eM:5,eD:6,tp:"p",sh:"5–6 Mayıs: Baharın bayramı",fl:"Hz. Hızır ile Hz. İlyas'ın yeryüzünde buluştuğuna dayanan bayramdır."},
+  {id:"anneler",nm:"Anneler Günü",em:"💐",m:5,d:0,tp:"s",dyn:"mothersday",sh:"Mayıs'ın 2. Pazar günü",fl:"Annelerin emeklerini onurlandıran özel gündür."},
+  {id:"ulger",nm:"Ülger Doğumu Fırtınası",em:"⭐",sM:5,sD:3,eM:5,eD:10,tp:"p",sh:"3–10 Mayıs: Ülker yıldızı fırtınası",fl:"Ülker (Pleiades) yıldız kümesinin ilk göründüğü 3–10 Mayıs'ta beklenen fırtınalardır."},
+  {id:"hamsin",nm:"Hamsin",em:"🌬️",sM:4,sD:15,eM:6,eD:4,tp:"p",sh:"15 Nisan–4 Haziran: Sıcak kuru rüzgar",fl:"Arapça 'elli' anlamındadır. Ortadoğu'da 50 gün süren sıcak, kuru, tozlu rüzgarlardır."},
+  {id:"yazgun",nm:"Yaz Gündönümü",em:"☀️",m:6,d:21,tp:"s",sh:"21 Haziran: Yılın en uzun günü",fl:"Yılın en uzun gündüzünü simgeler."},
+  {id:"kuyruk",nm:"Kuyruk Doğumu",em:"🦂",sM:10,sD:23,eM:11,eD:21,tp:"p",sh:"23 Eki–21 Kas: Akrep burcunun dönemi",fl:"Akrep (Scorpius) takımyıldızının göründüğü dönemdir."},
+  {id:"terazi",nm:"Terazi Doğumu",em:"⚖️",sM:9,sD:23,eM:10,eD:22,tp:"p",sh:"23 Eyl–22 Eki: Terazi burcunun dönemi",fl:"Terazi (Libra) takımyıldızının göründüğü dönemdir."},
+  {id:"zafer",nm:"Zafer Bayramı",em:"🏆",m:8,d:30,tp:"s",sh:"30 Ağustos 1922",fl:"1922 Kurtuluş Savaşı'nın askeri zaferini anmaktadır."},
+  {id:"mihrican",nm:"Mihrican — Bostan Bozan",em:"🍂",sM:9,sD:22,eM:9,eD:29,tp:"p",sh:"22–29 Eylül: Sonbahar ekinoksu",fl:"Sonbahar ekinoksunu (22 Eylül) kapsayan halk takvimi dönemidir."},
+  {id:"cumhuriyet",nm:"Cumhuriyet Bayramı",em:"🇹🇷",m:10,d:29,tp:"s",sh:"29 Ekim 1923",fl:"1923'te Türkiye Cumhuriyeti'nin ilan edildiği gündür."},
+  {id:"ataturk",nm:"Atatürk'ü Anma Günü",em:"🏛️",m:11,d:10,tp:"s",sh:"10 Kasım 1938",fl:"Türkiye Cumhuriyeti'nin kurucusu Atatürk'ün 1938'de hayatını kaybettiği gündür."},
+  {id:"kisgun",nm:"Kış Gündönümü",em:"🌙",m:12,d:21,tp:"s",sh:"21 Aralık: Yılın en uzun gecesi",fl:"Yılın en uzun gecesini simgeler."},
+  {id:"martdokuzu2",nm:"Mart'ın İki Dokuzu",em:"🌪️",sM:3,sD:27,eM:3,eD:31,tp:"p",sh:"27–31 Mart: Mart sonu fırtınalar",fl:"Mart'ın son günlerinde gelen fırtınalı hava dönemidir."}
+];
+
+function calcEaster(y){
+  var a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,
+      f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),
+      h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,
+      l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),
+      mo=Math.floor((h+l-7*m+114)/31),da=((h+l-7*m+114)%31)+1;
+  return new Date(y,mo-1,da);
+}
+function calcMothersDay(y){
+  var d=new Date(y,4,1),count=0;
+  while(count<2){if(d.getDay()===0)count++;if(count<2)d.setDate(d.getDate()+1);}
+  return d;
+}
+function getActiveEvents(){
+  var today=new Date(),year=today.getFullYear();
+  var tn=new Date(today.getFullYear(),today.getMonth(),today.getDate());
+  var results=[];
+  FOLK.forEach(function(ev){
+    var start,end;
+    if(ev.dyn==="easter"){
+      var ed=calcEaster(year);
+      if(ed<new Date(+tn-15*864e5))ed=calcEaster(year+1);
+      start=end=ed;
+    }else if(ev.dyn==="mothersday"){
+      var md=calcMothersDay(year);
+      if(md<new Date(+tn-15*864e5))md=calcMothersDay(year+1);
+      start=end=md;
+    }else if(ev.tp==="s"){
+      var yr=year,t0=new Date(yr,ev.m-1,ev.d);
+      if(t0<new Date(+tn-15*864e5))yr++;
+      start=end=new Date(yr,ev.m-1,ev.d);
+    }else{
+      var sy=year,ey=year;
+      if(ev.sM>ev.eM){if(today.getMonth()+1<=ev.eM)sy=year-1;else ey=year+1;}
+      start=new Date(sy,ev.sM-1,ev.sD);end=new Date(ey,ev.eM-1,ev.eD);
+    }
+    var ds=Math.floor((start-tn)/864e5),de=Math.floor((end-tn)/864e5);
+    if(ds<=15&&de>=-15){
+      var st;
+      if(ev.tp==="p"){if(ds<=0&&de>=0)st="act";else if(de<0)st="past";else st="soon";}
+      else{if(ds===0)st="act";else if(ds<0)st="past";else st="soon";}
+      results.push({ev:ev,start:start,end:end,ds:ds,de:de,st:st});
+    }
+  });
+  results.sort(function(a,b){return a.ds-b.ds;});
+  return results;
+}
+
+/* ── RENDER ── */
+function makeSkel(n){
+  var h="";n=n||4;
+  for(var i=0;i<n;i++){
+    h+='<div style="padding:14px 0;border-bottom:1px solid #1a1a1a">';
+    h+='<div class="sk" style="height:10px;width:'+(20+i*10)+'%"></div>';
+    h+='<div class="sk" style="height:16px;width:95%"></div>';
+    h+='<div class="sk" style="height:11px;width:'+(50+i*7)+'%"></div>';
+    h+='<div class="sk" style="height:10px;width:25%"></div></div>';
+  }
+  return h;
+}
+
+function renderNews(items, listId, cntId, staleId){
+  var el=ge(listId), cnt=cntId?ge(cntId):null, stEl=staleId?ge(staleId):null;
+  if(stEl) stEl.innerHTML="";
+  if(!items||!items.length){
+    var dbgHtml = "";
+    if(window.NEO_DEBUG && window.NEO_DEBUG.length){
+      dbgHtml = '<div style="text-align:left;background:#111;border:1px solid #333;border-radius:8px;padding:10px;margin-top:16px;font-size:10px;color:#888;font-family:monospace;white-space:pre-wrap;word-break:break-word">' +
+        esc(window.NEO_DEBUG.slice(-12).join("\n")) + '</div>';
+    }
+    el.innerHTML='<div class="empty">Haber yüklenemedi. 🔄 Yenile butonuna basın.' + dbgHtml + '</div>';
+    if(cnt)cnt.style.display="none";return;
+  }
+  if(cnt){cnt.textContent=items.length+" haber";cnt.style.display="inline";}
+  var h="";
+  for(var i=0;i<items.length;i++){
+    var it=items[i],brk=isBreaking(it.title)||isBreaking(it.origTitle||"");
+    h+='<div class="nc'+(brk?' brk':'')+'">';
+    if(brk)h+='<div class="brk-lbl">🔴 SON DAKİKA</div>';
+    h+='<div class="nc-meta"><span class="nc-src">'+esc(it.source)+'</span><span class="nc-dt">'+timeAgo(it.pub)+'</span></div>';
+    h+='<div class="nc-title">'+esc(it.title)+'</div>';
+    h+='<div class="nc-body">'+esc(it.summary||"Haberin tamamı için kaynağa gidin.")+'</div>';
+    h+='<div class="nc-footer"><button class="btn-detail">Özet</button>';
+    if(it.url&&it.url.indexOf("http")===0)
+      h+='<a class="nc-link" href="'+esc(it.url)+'" target="_blank" rel="noopener">🔗 Habere Git</a>';
+    h+='</div></div>';
+  }
+  el.innerHTML=h;
+  el.onclick=function(ev){
+    var nc=(ev.target.closest(".nc-title")||ev.target.closest(".btn-detail"));
+    if(!nc)return;
+    nc=nc.closest(".nc");
+    if(!nc)return;
+    var body=nc.querySelector(".nc-body"),btn=nc.querySelector(".btn-detail");
+    var o=body.classList.toggle("open");
+    if(btn)btn.textContent=o?"Gizle":"Özet";
+  };
+}
+
+function renderHistory(evts){
+  var el=ge("hist-content");
+  if(!evts||!evts.length){el.innerHTML='<p class="empty">Tarihsel veri yüklenemedi.</p>';return;}
+  var h="";
+  for(var i=0;i<evts.length;i++)
+    h+='<div class="hi"><span class="hi-yr">'+evts[i].year+'</span><p class="hi-tx">'+esc(evts[i].event)+'</p></div>';
+  h+='<p class="hi-note">Kaynak: Vikipedi · Yakın tarihten uzağa</p>';
+  el.innerHTML=h;
+}
+
+function renderFolk(){
+  var el=ge("folk-content"),evts=getActiveEvents();
+  if(!evts.length){el.innerHTML='<p class="empty">Bu dönemde aktif takvim olayı yok.</p>';return;}
+  function badgeClr(st){return st==="act"?"#c0392b":st==="soon"?"#e67e22":"#555";}
+  function badgeTxt(ev){
+    if(ev.st==="act")return ev.ev.tp==="p"?(ev.de===0?"Bugün bitiyor":ev.de+" gün daha"):"Bugün!";
+    if(ev.st==="soon")return ev.ds+" gün sonra";
+    return Math.abs(ev.de)+" gün önce bitti";
+  }
+  var h="";
+  for(var i=0;i<evts.length;i++){
+    var ev=evts[i],e=ev.ev;
+    var dateStr;
+    if(e.dyn==="easter")dateStr="Paskalya "+ev.start.getFullYear()+": "+fmtDMY(ev.start);
+    else if(e.dynNews==="mothersday")dateStr="Anneler Günü: "+fmtDMY(ev.start);
+    else if(ev.ev.tp==="p")dateStr=fmtDM(ev.start)+" – "+fmtDM(ev.end);
+    else dateStr=fmtDMY(ev.start);
+    h+='<div class="ev'+(ev.st==="act"?" hot":"")+'"><div class="ev-head" data-eid="'+e.id+'">';
+    h+='<span class="ev-em">'+e.em+'</span>';
+    h+(w='2<div class="ev-info"><strong.data class="ev-name">'+esc(e,".nm)+'</liststrong>';
+    h+='<span class="ev-date">'+dateStr+'</span><span class="ev-short">'+esc(e.sh)+'</span></div>';
+    h+='<span class="ev-badge" style="background:'+badgeClr(ev.st)+'">'+badgeTxt(ev)+'</span>';
+    h+='<span class="ev-arr" id="arr-'+e.id+'">▼</span></div>';
+    h+='<div class="ev-detail" id="det-'+e.id+'"><p class="ev-text">'+esc(e.fl)+'</p></div></div>';
+  }
+  el.innerHTML=h;
+  el.onclick=function(ev2){
+    var hd=ev2.target.closest(".ev-head");
+    if(!hd)return;
+    var id=hd.getAttribute("data-eid");
+    var det=ge("det-"+id),arr=ge("arr-"+id);
+    if(det&&arr){var o=det.classList.toggle("open");arr.innerHTML=o?"▲":"▼";}
+  };
+}
+
+/* ── BİLDİRİMLER ── */
+var notifActive = localStorage.getItem("no_notif") === "1";
+
+function applyNotifUI(){
+  var btn=ge("btn-notif"),lbl=ge("notif-lbl");
+  if(!btn||!lbl)return;
+  if(notifActive){btn.classList.add("on");lbl.textContent="Aktif ✓";}
+  else{btn.classList.remove("on");lbl.textContent="Bildirimler";}
+}
+
+function toggleNotif(){
+  notifActive=!notifActive;
+  localStorage.setItem("no_notif",notifActive?"1":"0");
+  applyNotifUI();
+  if(notifActive){
+    toast("🔔 Bildirimler açık!");
+    if(typeof Notification!=="undefined"&&Notification.permission==="default"){
+      try{Notification.requestPermission();}catch(e){}
+    }
+  }else toast("🔕 Bildirimler kapatıldı.");
+}
+
+function sendNotif(title,body){
+  if(!notifActive)return;
+  toast("🔔 "+title);
+  try{if(typeof Notification!=="undefined"&&Notification.permission==="granted")new Notification(title,{body:body||""});}catch(x){}
+}
+
+var seenBreaking=[];
+function checkBreaking(items){
+  (items||[]).forEach(function(item){
+    var id=(item.pub||"")+(item.title||"").slice(0,20);
+    if(isBreaking(item.title)&&seenBreaking.indexOf(id)<0){
+      seenBreaking.push(id);if(seenBreaking.length>100)seenBreaking.shift();
+      sendNotif("🔴 SON DAKİKA: "+item.title,item.source);
+    }
+  });
+}
+
+/* ── TOAST ── */
+var toastTmr=null;
+function toast(msg){
+  var el=ge("toast");el.textContent=msg;el.classList.add("on");
+  clearTimeout(toastTmr);toastTmr=setTimeout(function(){el.classList.remove("on");},5000);
+}
+
+/* ── SEKME ── */
+function switchTab(id){
+  ["tr","wo","al"].forEach(function(t){
+    var p=ge("p-"+t);if(p)p.style.display=t===id?"block":"none";
+  });
+  document.querySelectorAll(".tab").forEach(function(b){
+    b.classList.toggle("on",b.getAttribute("data-tab")===id);
+  });
+}
+
+function toggleAcc(bodyId,chvId){
+  var body=ge(bodyId),chv=ge(chvId);if(!body||!chv)return;
+  var open=body.classList.toggle("open");chv.innerHTML=open?"▲":"▼";
+}
+
+/* ── SAAT ── */
+function tickClock(){var el=ge("clk");if(el)el.textContent=new Date().toLocaleTimeString("tr-TR",{hour:"2-digit",minute:"2-digit"});}
+setInterval(tickClock,1000);tickClock();
+function setUpd(){var el=ge("upd-t");if(el)el.textContent=new Date().toLocaleTimeString("tr-TR",{hour:"2-digit",minute:"2-digit"});}
+
+/* ── YENİLE ── */
+function doRefresh(){
+  toast("🔄 Güncelleniyor...");
+  cDel("tr");cDel("wo");
+  window.NEO_DEBUG = [];
+  var d=new Date();cDel("hist_"+(d.getMonth()+1)+"_"+d.getDate());
+  ["list-tr","list-wo","list-al"].forEach(function(id){var el=ge(id);if(el)el.innerHTML=makeSkel();});
+  ["stale-tr","stale-wo"].forEach(function(id){var el=ge(id);if(el)el.innerHTML="";});
+  var hc=ge("hist-content");if(hc)hc.innerHTML=makeSkel(3);
+  ["tr","wo","al"].forEach(function(t){setSp(t,true);});
+  Promise.all([loadTR(),loadWO(),loadHistory()]).then(function(res){
+    var tr=res[0],wo=res[1],hist=res[2];
+    renderNews(tr.data,"list-tr","cnt-tr","stale-tr");
+    renderNews(wo.data,"list-wo","cnt-wo","stale-wo");
+    var all=(tr.data||[]).concat(wo.data||[]).sort(function(a,b){return new Date(b.pub)-new Date(a.pub);}).slice(0,15);
+    renderNews(all,"list-al","cnt-al",null);
+    var an=ge("note-al");if(an)an.style.display=(wo.data||[]).length>0?"block":"none";
+    renderHistory(hist);
+    ["tr","wo","al"].forEach(function(t){setSp(t,false);});setUpd();
+    var tl=(tr.data||[]).length,wl=(wo.data||[]).length;
+    setStatus(tl+" TR + "+wl+" Dünya");
+    toast("✅ "+tl+" TR + "+wl+" haber yüklendi");
+    checkBreaking((tr.data||[]).concat(wo.data||[]));
+    sendNotif("Ne Olmuş güncellendi",tl+" TR + "+wl+" haber");
+  });
+}
+
+/* ── BAŞLANGIÇ ── */
+document.addEventListener("DOMContentLoaded",function(){
+  document.querySelectorAll(".tab").forEach(function(btn){
+    btn.addEventListener("click",function(){switchTab(this.getAttribute("data-tab"));});
+  });
+  var ah=ge("acc-hist");if(ah)ah.addEventListener("click",function(){toggleAcc("body-hist","hist-chv");});
+  var af=ge("acc-folk");if(af)af.addEventListener("click",function(){toggleAcc("body-folk","folk-chv");});
+  var bn=ge("btn-notif");if(bn)bn.addEventListener("click",toggleNotif);
+  var br=ge("btn-refresh");if(br)br.addEventListener("click",doRefresh);
+
+  applyNotifUI();
+  var today=new Date();
+  var hbdg=ge("hist-badge");if(hbdg)hbdg.textContent=today.toLocaleDateString("tr-TR",{day:"numeric",month:"long"});
+  renderFolk();
+  var bh=ge("body-hist");if(bh)bh.classList.add("open");
+  var hchv=ge("hist-chv");if(hchv)hchv.innerHTML="▲";
+
+  ["list-tr","list-wo","list-al"].forEach(function(id){var el=ge(id);if(el)el.innerHTML=makeSkel();});
+  ["tr","wo","al"].forEach(function(t){setSp(t,true);});
+  setStatus("Yükleniyor...");
+
+  Promise.all([loadTR(),loadWO(),loadHistory()]).then(function(res){
+    var tr=res[0],wo=res[1],hist=res[2];
+    renderNews(tr.data,"list-tr","cnt-tr","stale-tr");
+    renderNews(wo.data,"list-wo","cnt-wo","stale-wo");
+    var all=(tr.data||[]).concat(wo.data||[]).sort(function(a,b){return new Date(b.pub)-new Date(a.pub);}).slice(0,15);
+    renderNews(all,"list-al","cnt-al",null);
+    var an=ge("note-al");if(an)an.style.display=(wo.data||[]).length>0?"block":"none";
+    renderHistory(hist);
+    ["tr","wo","al"].forEach(function(t){setSp(t,false);});setUpd();
+    var tl=(tr.data||[]).length,wl=(wo.data||[]).length;
+    setStatus(tl+" TR + "+wl+" Dünya"+(tr.stale||wo.stale?" (önceki saatten)":""));
+    checkBreaking((tr.data||[]).concat(wo.data||[]));
+
+    setInterval(function(){
+      cDel("tr");cDel("wo");
+      window.NEO_DEBUG = [];
+      Promise.all([loadTR(),loadWO()]).then(function(r2){
+        var t2=r2[0],w2=r2[1];
+        renderNews(t2.data,"list-tr","cnt-tr","stale-tr");
+        render-wo","cnt-wo","stale-wo");
+        var a=(t2.data||[]).concat(w2.data||[]).sort(function(a,b){return new Date(b.pub)-new Date(a.pub);}).slice(0,15);
+        renderNews(a,"list-al","cnt-al",null);
+        setUpd();
+        var tl2=(t2.data||[]).length,wl2=(w2.data||[]).length;
+        setStatus(tl2+" TR + "+wl2+" Dünya");
+        checkBreaking((t2.data||[]).concat(w2.data||[]));
+        sendNotif("Saatlik güncelleme",tl2+" TR + "+wl2+" haber");
+      });
+    },3600000);
+  });
+});
+</script>
+</body>
+</html>
