@@ -5,7 +5,13 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
 <meta name="theme-color" content="#0a0a0a"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-title" content="Ne Olmus"/>
+<meta name="apple-mobile-web-app-title" content="Ne Olmuş"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<link rel="apple-touch-icon" href="https://i.ibb.co/W4HksHVP/MG-5957.jpg"/>
+<link rel="apple-touch-icon" sizes="180x180" href="https://i.ibb.co/W4HksHVP/MG-5957.jpg"/>
+<link rel="apple-touch-icon" sizes="152x152" href="https://i.ibb.co/W4HksHVP/MG-5957.jpg"/>
+<link rel="apple-touch-icon" sizes="120x120" href="https://i.ibb.co/W4HksHVP/MG-5957.jpg"/>
+<link rel="icon" href="https://i.ibb.co/W4HksHVP/MG-5957.jpg"/>
 <title>Ne Olmuş</title>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -13,7 +19,8 @@ html,body{background:#0a0a0a;color:#e8e4dc;font-family:-apple-system,BlinkMacSys
 button{cursor:pointer;border:none;outline:none;background:none}
 a{text-decoration:none;color:inherit}
 #hdr{display:flex;align-items:center;gap:11px;padding:10px 14px;background:#0a0a0a;position:sticky;top:0;z-index:200;border-bottom:2px solid #b8860b}
-.logo{width:46px;height:46px;flex-shrink:0;border-radius:10px;background:#1a1500;display:flex;align-items:center;justify-content:center;font-size:26px}
+.logo{width:46px;height:46px;object-fit:cover;flex-shrink:0;border-radius:10px;background:#1a1500;display:flex;align-items:center;justify-content:center;font-size:26px;overflow:hidden}
+.logo img{width:100%;height:100%;object-fit:cover;border-radius:10px}
 .hdr-mid{flex:1;min-width:0}
 .app-title{font-size:24px;font-weight:900;color:#f0c040;line-height:1;letter-spacing:-.5px}
 .clk{font-size:11px;color:#888;margin-top:2px}
@@ -64,7 +71,7 @@ a{text-decoration:none;color:inherit}
 .hi-note{font-size:10px;color:#2a2a2a;margin-top:8px;font-style:italic}
 .ev{margin-bottom:8px;border-radius:10px;overflow:hidden;border:1px solid #1c1c1c;background:#0f0f0f}
 .ev.hot{border-color:rgba(240,192,64,.35);background:#100e00}
-.ev-head{display:flex;align-items:center;gap:10px;padding:12px;cursor:pointer;user-select:none;-webkit-user-select:none}
+.ev-head{display:flex;align-items:center;gap:10px;padding:12px;cursor:pointer;user-select:none}
 .ev-em{font-size:22px;min-width:30px}
 .ev-info{flex:1;min-width:0}
 .ev-name{font-size:13px;font-weight:700;display:block;margin-bottom:2px;color:#e8e4dc}
@@ -85,7 +92,7 @@ a{text-decoration:none;color:inherit}
 </head>
 <body>
 <header id="hdr">
-  <div class="logo">📰</div>
+  <div class="logo"><img src="https://i.ibb.co/W4HksHVP/MG-5957.jpg" alt="Ne Olmuş"/></div>
   <div class="hdr-mid">
     <div class="app-title">Ne Olmuş</div>
     <div class="clk" id="clk">--:--</div>
@@ -138,13 +145,9 @@ a{text-decoration:none;color:inherit}
 <div id="toast"></div>
 <script>
 /* ═══════════════════════════════════
-   Ne Olmuş — Son sürüm
-   - Çalışan TR kaynakları (5)
-   - Dünya kaynakları + proxy fallback
-   - Tarihte Bugün Türkçe çevirili
+   Ne Olmuş — Hızlı sürüm (timeout kısaltıldı)
 ═══════════════════════════════════ */
 
-/* ── ÇALIŞAN TÜRKİYE KAYNAKLARI ── */
 var TR_FEEDS = [
   {n:"CNN Türk",    u:"https://www.cnnturk.com/feed/rss/all/news"},
   {n:"DW Türkçe",   u:"https://rss.dw.com/rdf/rss-tur-all"},
@@ -153,7 +156,6 @@ var TR_FEEDS = [
   {n:"Sabah",       u:"https://www.sabah.com.tr/rss/anasayfa.xml"}
 ];
 
-/* ── DÜNYA: Direkt + proxy'li kaynaklar ── */
 var WO_FEEDS = [
   {n:"NY Times",    u:"https://rss.nytimes.com/services/xml/rss/nyt/World.xml"},
   {n:"DW English",  u:"https://rss.dw.com/rdf/rss-en-world"},
@@ -165,7 +167,6 @@ var WO_FEEDS = [
   {n:"NPR World",   u:"https://feeds.npr.org/1004/rss.xml", proxy:true}
 ];
 
-/* ── TÜRKÇE ULUSLARARASI KAYNAKLAR (çeviri gerekmez) ── */
 var WO_TR_FEEDS = [
   {n:"BBC Türkçe",   u:"https://feeds.bbci.co.uk/turkce/rss.xml"},
   {n:"Euronews TR",  u:"https://tr.euronews.com/rss"}
@@ -186,7 +187,7 @@ var PROXIES = [
 
 function xfetch(url, ms) {
   var ctrl = new AbortController();
-  var tid = setTimeout(function(){ ctrl.abort(); }, ms || 10000);
+  var tid = setTimeout(function(){ ctrl.abort(); }, ms || 5000);
   return fetch(url, {signal: ctrl.signal, cache:"no-store", mode:"cors"})
     .then(function(r){ clearTimeout(tid); return r; })
     .catch(function(e){ clearTimeout(tid); throw e; });
@@ -289,7 +290,7 @@ function fetchOneFeed(feedUrl, sourceName, useProxy) {
   var t0 = Date.now();
 
   function tryDirect(){
-    return xfetch(feedUrl, 8000)
+    return xfetch(feedUrl, 4000)
       .then(function(r){
         if(!r.ok) throw new Error("HTTP"+r.status);
         return r.text();
@@ -308,7 +309,7 @@ function fetchOneFeed(feedUrl, sourceName, useProxy) {
       var proxyUrl = PROXIES[idx](feedUrl);
       var pIdx = idx;
       idx++;
-      return xfetch(proxyUrl, 10000)
+      return xfetch(proxyUrl, 6000)
         .then(function(r){
           if(!r.ok) throw new Error("HTTP"+r.status);
           return r.text();
@@ -341,7 +342,7 @@ function loadTR() {
     if(cached && cached.length) { resolve({data:cached, stale:false}); return; }
     setSp("tr",true); setSp("al",true);
     dbg("=== TR yükleme ("+TR_FEEDS.length+" kaynak) ===");
-    runLimited(TR_FEEDS.map(function(s){ return function(){ return fetchOneFeed(s.u, s.n, false); }; }), 3)
+    runLimited(TR_FEEDS.map(function(s){ return function(){ return fetchOneFeed(s.u, s.n, false); }; }), 5)
       .then(function(results){
         var all = [];
         results.forEach(function(r){ all = all.concat(r||[]); });
@@ -377,7 +378,7 @@ function loadWO() {
       };
     });
 
-    runLimited(tasks, 3)
+    runLimited(tasks, 5)
       .then(function(results){
         var all = [];
         results.forEach(function(r){ all = all.concat(r||[]); });
@@ -500,7 +501,6 @@ function translateOne(text, from, to, cb) {
     });
 }
 
-/* ── TARİHTE BUGÜN (Türkçe çevirili) ── */
 function loadHistory() {
   return new Promise(function(resolve){
     var td=new Date(), m=td.getMonth()+1, d=td.getDate();
@@ -543,7 +543,6 @@ function translateHistory(events, callback) {
   });
 }
 
-/* ── SAATLİ MAARİF TAKVİMİ ── */
 var FOLK=[
   {id:"mihrican",nm:"Mihrican — Bostan Bozan",em:"🍂",sM:9,sD:22,eM:9,eD:29,tp:"p",sh:"22–29 Eylül: Sonbahar ekinoksu",fl:"Sonbahar ekinoksunu (22 Eylül) kapsayan halk takvimi dönemidir. 'Bostan Bozan' da denir çünkü bahçe ürünleri artık bozulmaya başlar."},
   {id:"terazi",nm:"Terazi Doğumu",em:"⚖️",sM:9,sD:23,eM:10,eD:22,tp:"p",sh:"23 Eyl–22 Eki: Terazi burcunun dönemi",fl:"Terazi (Libra) takımyıldızının göründüğü dönemdir. Sonbahar ekinosuyla başlar. Hasat mevsiminin sonu, kışa hazırlık zamanıdır."},
